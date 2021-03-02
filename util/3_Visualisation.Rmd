@@ -110,57 +110,39 @@ Now let's try an example with multiple neurons
 ```{r}
 # Pulling (annotations on) neurons from a single dataset on CATMAID
 
-bates = find_neurons(annotations='Paper: Bates and Schlegel et al 2020') 
+batesids = catmaid_skids('Paper: Bates and Schlegel et al 2020') 
 # Viewing first 10 neurons:
-bates[0:10]
+bates10=read.neurons.catmaid(batesids[1:10])
+bates10
 ```
 
 ```{r}
+nclear3d()
 # Plotting multiple neurons, we get a default multi-color pallete
-
-bates[0:10].plot3d(hover_name=True)
-
+plot3d(bates10)
 ```
 
-What if we want to use color to group neurons in some way?
+What if we want to use colour to group neurons in some way?
 
 The following example illustrates colouring by lineage, where lineage is derived from standardised neuron names on FAFB CATMAID 
 
 
 ```{r}
 # On CATMAID, we need to know something about the structure of names and parse them to get types:
-
-import re 
-prog = re.compile("Uniglomerular(.*?) DA1 ")
-
-# Match all neuron names in `bates` against that pattern
-is_da1 = list(map(lambda x: prog.match(x) != None, bates.name))
-
-# Subset list of neurons
-da1 = bates[is_da1]
-da1.head()
+da1=read.neurons.catmaid("name:Uniglomerular(.*?) DA1 ")
+da1
 ```
 
 ```{r}
-# Add lineage attribute to all da1 neurons based on regex against name
-for n in da1:
-    # Split name into components and keep only the tract
-    n.lineage = n.name.split(' ')[3]    
+# look at the catmaid metadata for those neurons
+da1[,]
+```
 
-import seaborn as sns
-import numpy as np 
-
-# Get all unique lineages (we expect only two)
-lineages = np.unique(da1.lineage) 
-
-# Generate a color per lineage
-lin_cmap = dict(zip(lineages, sns.color_palette('muted', len(lineages))))
-
-# Make a dictionary mapping skid to colour appropriate to lineage
-lineage_map = dict(zip(da1.id, da1.lineage)) 
-neuron_cmap = {i: lin_cmap[l] for i, l in lineage_map.items()}
-
-navis.plot3d(da1, color=neuron_cmap, legend_group=lineage_map, hover_name=True, width=1000)
+```{r}
+# make a new column in the attached metadata for lineages
+da1[,'lineage']=stringr::str_match(da1[,'name'], '[adlv]+PN')
+table(da1[,'lineage'])
+plot(da1, col=lineage, WithNodes=F)
 ```
 
 We can do the same thing using VFB, looking up the relevant terms on the web site and then using these to categorise CATMAID neurons
