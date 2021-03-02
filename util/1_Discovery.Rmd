@@ -24,8 +24,9 @@ library(dplyr)
 Set up connections to VFB APIs and VFB CATMAID server.
 
 ```{r}
-# vfb_connect object
-vc = VfbConnect(neo_endpoint="http://pdb.p2.virtualflybrain.org")
+# for latest version of ontology?
+# vc = VfbConnect(neo_endpoint="http://pdb.p2.virtualflybrain.org")
+vc = VfbConnect()
 
 # Connect to the VFB CATMAID server hosting the FAFB data
 catmaid::vfbcatmaid('fafb')
