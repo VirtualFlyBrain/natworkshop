@@ -62,9 +62,7 @@ plot(n, WithNodes = F, col='gold')
 ```{r}
 # in order to 
 nclear3d()
-# Or 3D 
-# FIXME plot3d.neuronlist works with plotly but not plot3d.neuron
-plot3d(neuronlist(n), plotengine='plotly')
+plot3d(n, plotengine='plotly')
 ```
 
 **Navigation:**
@@ -86,12 +84,12 @@ an rgb/rgba tuple as hex e.g. "#FF0000".
 
 ```{r}
 nclear3d()
-plot3d(n, color='cyan')
+plot3d(n, col='cyan')
 ```
 
 ```{r}
 nclear3d()
-plot3d(n, color='"#FF0000"')
+plot3d(n, col='#FF0000')
 ```
 
 
@@ -102,7 +100,7 @@ Float over the
 ```{r}
 # CATMAID neuron objects include connectors (synapses)  here pre-(red) and postsynapses (blue).
 nclear3d()
-plot3d(neuronlist(n), width=1000, connectors=TRUE, col='cyan', plotengine='plotly') #
+plot3d(n, width=1000, WithConnectors = TRUE, col='cyan', plotengine='plotly') #
 ```
 
 Now let's try an example with multiple neurons
