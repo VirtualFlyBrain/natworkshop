@@ -51,23 +51,21 @@ oct_VPM3
 ```
 
 ```{r}
+# remove output folder
+unlink('oct_VPM3b', recursive = TRUE)
 oct_VPM3_images = vc$neo_query_wrapper$get_images(oct_VPM3[,'id'], stomp=T, 
                                                   template='JRC2018Unisex', 
                                                   image_folder ='oct_VPM3b')
 oct_VPM3_images
 ```
 
-Download the images onto a location on disk.
-```{r}
-oct_VPM3_images = vc$get_images_by_type('octopaminergic VPM3 neuron', stomp=T, template='JRC2018Unisex', image_folder = 'oct_VPM3')
-```
 
 This is our first 3D plot. Notice how the neurons from different datasets 
 overlap. This is because they have all been transformed to a common template 
 brain.
 
 ```{r}
-nl = read.neurons('oct_VPM3b/')
+nl = read.neurons('oct_VPM3b/', df=oct_VPM3_images)
 nl
 ```
 
