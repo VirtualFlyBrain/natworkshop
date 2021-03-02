@@ -18,8 +18,8 @@ library(natverse)
 library(dplyr)
 
 # if Running on Rstudio server (==cloud) use plotly as visualisation default
-if(isTRUE(Sys.getenv('RSTUDIO_PROGRAM_MODE')=="server")) 
-    options(nat.plotengine = 'plotly')
+#if(isTRUE(Sys.getenv('RSTUDIO_PROGRAM_MODE')=="server"))
+options(nat.plotengine = 'plotly')
 ```
 
 Set up connections to VFB APIs and VFB CATMAID server.
@@ -125,9 +125,11 @@ Ugly, let's get rid of those spiky bits. To clean up 'spiky' neurons with obviou
 ```{r}
 nclear3d()
 # 5000 nm threshold for spike size
-plot3d(elmr::unspike(nl,threshold = 5000), plotengine = 'plotly')
+plot3d(elmr::unspike(nl,threshold = 5), plotengine = 'plotly', soma=T)
+plot3d(JRC2018U)
 ```
 
+Let's get a link to a scene in the VFB viewer including those different ids:
 
 ```{r}
 vc$get_vfb_link(c(similar_to_EPG6L1[,'id'],'VFB_001012ay'), template='JRC2018Unisex') %>%
