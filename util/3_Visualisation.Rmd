@@ -17,8 +17,6 @@ options(nat.plotengine = 'plotly')
 Set up connections to VFB APIs and VFB CATMAID server.
 
 ```{r}
-# vfb_connect object
-# vc = VfbConnect(neo_endpoint="http://pdb.p2.virtualflybrain.org")
 vc = VfbConnect()
 # Connect to the VFB CATMAID server hosting the FAFB data
 catmaid::vfbcatmaid('fafb')
@@ -31,14 +29,21 @@ in a notebook environment or using a `rgl`-based 3D viewer when running on the
 desktop. The `rgl` solution won't work in rstudio.cloud so we will focus on 2d
 and `plotly` for 3d. See http://natverse.org/nat/articles/plotly.html for more details.
 
+
+We'll use a FAFB neuron, retrieved using nat/rcatmaid as an example
+This retrieves a CATMAID neuron object with skeleton id = 16 
+(See the Mapping notebook for how to find ids)
 ```{r}
-# We'll use a FAFB neuron, retrieved using nat/rcatmaid as an example
-# retrieves a CatMaid neuron object with skeleton id = 16 (See the Mapping notebook for how to find )
-n = read.neuron.catmaid(16) 
+n = read.neuron.catmaid(16)
+# just typing gives you information about the neuron
 n
 ```
 
+You can get more details like this:
 
+```{r}
+summary(n)
+```
 
 ```{r}
 # We can plot this in 2D
@@ -48,12 +53,14 @@ plot(n)
 ```{r}
 plot(n, WithNodes = F)
 ```
+
 ```{r}
 plot(n, WithNodes = F, col='gold')
 ```
 
 
 ```{r}
+# in order to 
 nclear3d()
 # Or 3D 
 # FIXME plot3d.neuronlist works with plotly but not plot3d.neuron
@@ -78,8 +85,15 @@ a string - e.g. "red" or
 an rgb/rgba tuple as hex e.g. "#FF0000". 
 
 ```{r}
+nclear3d()
 plot3d(n, color='cyan')
 ```
+
+```{r}
+nclear3d()
+plot3d(n, color='"#FF0000"')
+```
+
 
 #### Excercise
 
@@ -96,7 +110,7 @@ Now let's try an example with multiple neurons
 ```{r}
 # Pulling (annotations on) neurons from a single dataset on CATMAID
 
-bates = pymaid.find_neurons(annotations='Paper: Bates and Schlegel et al 2020') 
+bates = find_neurons(annotations='Paper: Bates and Schlegel et al 2020') 
 # Viewing first 10 neurons:
 bates[0:10]
 ```
