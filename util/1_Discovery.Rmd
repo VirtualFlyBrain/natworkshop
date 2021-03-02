@@ -80,6 +80,7 @@ bates %>% as.data.frame()
 ds = vc$neo_query_wrapper$get_datasets(summary=T) %>% 
   vc_df() %>%
   arrange(id)
+ds
 ```
 
 ```{r}
