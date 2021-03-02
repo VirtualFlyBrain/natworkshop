@@ -56,6 +56,11 @@ View(res)
 ```
 
 
+How would I find the anatomy ontology id for my favourite neurons?
+
+Easiest to search [VFB website](https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?id=FBbt_00047965&i=VFB_00101567)
+
+
 ```{r}
 # A query for summary info
 summary = vc$neo_query_wrapper$get_type_TermInfo(list('FBbt_00003686'), summary=T)
@@ -95,6 +100,11 @@ KC_types = vc$get_subclasses("Kenyon cell", summary=T)
 # vc_df is a convenience function to make a data.frame of summary results
 vc_df(KC_types)
 ```
+Subclasses of one of those subclasses:
+```{r}
+vc$get_subclasses("larval Kenyon cell", summary=T) %>% vc_df()
+```
+
 
 Fancier searchable table
 
