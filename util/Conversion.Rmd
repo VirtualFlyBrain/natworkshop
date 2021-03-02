@@ -1,0 +1,14 @@
+---
+title: "Conversion"
+output: html_notebook
+---
+
+```{r}
+# Make fake R markdown notebooks from the existing demos
+pynbs=dir("../../training/Python Workshop/", pattern = 'ipynb$',full.names = T)
+for(f in pynbs) {
+  rmarkdown:::convert_ipynb(f, output=xfun::with_ext(basename(f), "Rmd"))
+}
+
+```
+
