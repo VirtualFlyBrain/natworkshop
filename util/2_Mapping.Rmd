@@ -95,14 +95,15 @@ similar_to_EPG6L1
 ```
 
 ```{r}
+# Python can't seem to remove folders on all OS types
+unlink('EPG6L1', recursive = TRUE)
 EPG6L1_similar_images = vc$neo_query_wrapper$get_images(
     c(similar_to_EPG6L1[, 'id'], 'VFB_001012ay'),
     template = 'JRC2018Unisex',
     # this little trick stores the location of the temp folder in a variable
-    image_folder = EPG6L1folder <- tempfile('EPG6L1'),
+    image_folder = 'EPG6L1',
     stomp = T
 ) # Note - stomp allows an existing folder to be over-written
-
 
 EPG6L1_similar_images
 ```
@@ -112,7 +113,7 @@ EPG6L1_similar_images['parents_label']
 ```
 
 ```{r}
-nl = read.neurons(EPG6L1folder)
+nl = read.neurons('EPG6L1')
 ```
 
 ```{r}
