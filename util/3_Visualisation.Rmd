@@ -148,82 +148,61 @@ plot(da1, col=lineage, WithNodes=F)
 We can do the same thing using VFB, looking up the relevant terms on the web site and then using these to categorise CATMAID neurons
 
 ```{r}
-# With VFB, we can query by type
-
-from vfb_connect.cross_server_tools import gen_short_form # TODO - make this arg on oc.get_instances
-
-def vfb_type_2_skids(vfb_type):
+# With VFB, we can query by type
+vfb_type_2_skids <- function(vfb_type) {
+    gen_short_form <- vfbconnectr:::vfb_connect$cross_server_tools$gen_short_form
     # Get IDs (short_forms) for instances of type
-    da1_from_vfb = map(gen_short_form, vc$oc.get_instances(vfb_type, query_by_label=True))
+    urlids=vc$oc$get_instances(vfb_type, query_by_label=TRUE)
+    da1_from_vfb = sapply(urlids, gen_short_form)
+    
     # Find which neurons are in catmaid_fafb and return 
-    da1_skid_lookup = vc$neo_query_wrapper.vfb_id_2_xrefs(da1_from_vfb, db='catmaid_fafb', reverse_return=True)
+    da1_skid_lookup = vc$neo_query_wrapper$vfb_id_2_xrefs(da1_from_vfb, db='catmaid_fafb', reverse_return=TRUE)
     # Convert skids to ints 
-    da1_skids = da1_skid_lookup.keys()
-    return list(da1_skids)
+    names(da1_skid_lookup)
+}
 
 da1_fafb = vfb_type_2_skids("'adult antennal lobe projection neuron DA1'")
 da1_l_fafb = vfb_type_2_skids("'adult antennal lobe projection neuron DA1 lPN'")
 da1_v_fafb = vfb_type_2_skids("'adult antennal lobe projection neuron DA1 vPN'")
 
-
-is_da1 = list(map(lambda x: x in da1_fafb, bates.skeleton_id))
-da1 = bates[is_da1]
+#da1 = bates[is_da1]
 ```
 
+
 ```{r}
-# Generate a palette 
-palette = sns.color_palette('muted', 2)
-# Make a dictionary 
-lin_cmap = { 'lPN': palette[0], 'vPN': palette[1]}
+# add a new metadata column with the lineage calculate from FAFB data
+da1[,'fafblineage']=""
+da1[da1_l_fafb,'fafblineage']='lPN'
+da1[da1_v_fafb,'fafblineage']='vPN'
+da1[,c('skid', 'lineage', 'fafblineage')]
 ```
 
+
 ```{r}
-# Make a dictionary with key = skid & value = color by lineage
-lineage_map = {n: 'lPN' for n in da1_l_fafb}
-lineage_map.update({n: 'vPN' for n in da1_v_fafb})
-
-neuron_cmap = {n: lin_cmap[l] for n, l in lineage_map.items()}
-
-navis.plot3d(da1, color=neuron_cmap, hover_name=True, legend_group=lineage_map, width=1000)
+plot(da1, col=fafblineage, WithNodes=F)
 ```
 
 VFB allows us to pull neurons from multiple sources and display them in a single template space
 
 ```{r}
-DA1_manifest = vc$get_images_by_type("'adult antennal lobe projection neuron DA1'", template = 'JRC2018Unisex', image_folder = 'DA1', stomp=True)
+unlink('DA1', recursive = T)
+DA1_manifest = vc$get_images_by_type("'adult antennal lobe projection neuron DA1'", template = 'JRC2018Unisex', image_folder = 'DA1', stomp=TRUE)
 ```
 
 ```{r}
-DA1_manifest[0:3]
+DA1_manifest
 ```
 
-We can then plot the neurons, coloring by data_source
+We can then plot the neurons, colouring by data_source
 
 ```{r}
-# Read skeletons from file
-#nl = navis.read_swc('DA1') 
-
-# The neuron names correspond to the filenames
-# To make it easier, we will manually add IDs from the manifest
-ids = dict(zip(DA1_manifest.filename.map(lambda x: x.replace('.swc', '')).values,
-               DA1_manifest.accession.values)) 
-for n in nl:
-    n.id = ids[n.name]
-
-# Add data source 
-ds = DA1_manifest.set_index('accession').data_source.to_dict()
-for n in nl:
-    n.source = ds[n.id]
+da1all=read.neurons("DA1/", df = DA1_manifest)
+da1all[,'dataset']
 ```
 
+
 ```{r}
-source_cmap = dict(zip(np.unique(nl.source),
-                       sns.color_palette('muted', len(np.unique(nl.source)))))
-
-source_map = dict(zip(nl.id, nl.source))
-neuron_cmap = {n.id: source_cmap[n.source] for n in nl}
-
-navis.plot3d(nl, color=neuron_cmap, hover_name=True, legend_group=source_map, width=1000)
+plot(da1all, col=dataset, WithNodes=F)
 ```
 
 ### Adding volumes
@@ -233,20 +212,21 @@ navis.plot3d(nl, color=neuron_cmap, hover_name=True, legend_group=source_map, wi
 # https://v2.virtualflybrain.org/org.geppetto.frontend/geppetto?q=VFB_00101567,PaintedDomains
 
 # Get an image (obj volume) of the mushroom body calyx on JRC2018Unisex: 
-
-MB = vc$get_images_by_type("'mushroom body calyx'", template = 'JRC2018Unisex', image_folder='MB', image_type='obj', stomp=True) # TODO - check for man and pull if there.
+unlink('MB', recursive = TRUE)
+MB = vc$get_images_by_type("'mushroom body calyx'", template = 'JRC2018Unisex', image_folder='MB', image_type='obj', stomp=TRUE) # TODO - check for man and pull if there.
 MB
 ```
 
 ```{r}
-# Plot this along with the neurons in the previous example
-import trimesh
+mbca = read.neurons('MB/CA_on_JRC2018Unisex_adult_brain.obj')
+boundingbox(mbca)
+```
 
-# TBA # discovery step
 
-test = trimesh.load('MB/CA_on_JRC2018Unisex_adult_brain.obj')
-mesh = navis.Volume(test)
-mesh.color = (230, 230, 230, .2)
-mesh.name = "ME on JRC2018Unisex adult brain"
-navis.plot3d([mesh, nl], color=neuron_cmap, hover_name=True, legend_group=source_map)
+```{r}
+nclear3d()
+plot3d(da1all[1:10],col=dataset)
+# FIXME can't seem to shade in plotly
+# @Sri ideas?
+wire3d(mbca[[1]], col='grey')
 ```
