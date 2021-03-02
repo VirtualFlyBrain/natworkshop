@@ -5,7 +5,8 @@ output: html_notebook
 
 ## Rstudio hints
 
-* Tab completion and type ahead can be used to help find functions 
+* Tab completion and type ahead can be used to help find functions
+* Type ahead can match any part of the name
 * Pressing `Ctrl + .`  can find a file in a project
 * Highlight a function name and press F1 to get help
 
@@ -72,13 +73,14 @@ vc$neo_query_wrapper$get_anatomical_individual_TermInfo(list('VFB_jrchjrch'), su
 ```{r}
 # Some bodyIDs of HemiBrain neurons from the neuprint DataBase:
 bodyIDs = c(1068958652, 571424748, 1141631198)
-vc$neo_query_wrapper$xref_2_vfb_id(as.character(bodyIDs)) # Note IDs must be strings
+foreign_ids=vc$neo_query_wrapper$xref_2_vfb_id(as.character(bodyIDs))
+str(foreign_ids) # Note IDs must be strings
 ```
 
 ```{r}
 # xref queries can be constrained by DB. Results can optionally be reversed
 
-vc$neo_query_wrapper$xref_2_vfb_id(as.character(bodyIDs), db = 'neuprint_JRC_Hemibrain_1point1' , reverse_return=T)
+str(vc$neo_query_wrapper$xref_2_vfb_id(as.character(bodyIDs), db = 'neuprint_JRC_Hemibrain_1point1' , reverse_return=T))
 ```
 
 ### 2. `vc` direct methods overview
@@ -87,8 +89,11 @@ vc$neo_query_wrapper$xref_2_vfb_id(as.character(bodyIDs), db = 'neuprint_JRC_Hem
 
 ```{r}
 KC_types = vc$get_subclasses("Kenyon cell", summary=T)
+# vc_df is a convenience function to make a data.frame of summary results
 vc_df(KC_types)
 ```
+
+Fancier searchable table
 
 ```{r}
 library(DT)
