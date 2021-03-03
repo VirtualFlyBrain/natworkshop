@@ -203,22 +203,22 @@ points3d(cn[c("connector_x", "connector_y", "connector_z")])
 
 #### neuprint connectivity queries
 
-To programmatically interface with neuprint, we will use neuprint-python (link). It requires an API token which you can get via the website and is bound to the Google account that you use to log into neuprint. For this workshop we provide such a token as environment variable but you will need to start using your own token after the workshop is over.
+To programmatically interface with neuprint, we will use neuprintr (link). It requires an API token which you can get via the website and is bound to the Google account that you use to log into neuprint. For this workshop we provide such a token as environment variable but you will need to start using your own token after the workshop is over.
 
 These examples use the hemibrain v1.1 dataset.
 
-### neuprint-python
+### neuprintr
 First we have to initialize the connection.
 
 ```{r}
-import neuprint as neu
-client = neu.Client('https://neuprint.janelia.org', dataset='hemibrain:v1.1')
+library('neuprintr')
+neuprint_login()
 ```
 
-Most functions in `neuprint-python` accept `neu.NeuronCriteria` which is effectively a filter for body IDs, types, etc:
+Most functions in `neuprintr` allow queries that can be used to look for specific body IDs, types, etc:
 
 ```{r}
-help(neu.NeuronCriteria)
+?neuprintr
 ```
 
 ### Fetching neurons
@@ -228,27 +228,24 @@ Let's say we want to find all antennnal lobe projection neurons (PNs). Their typ
 To get them all, we need to use regex patterns (see this [cheatsheet](https://cheatography.com/davechild/cheat-sheets/regular-expressions/)):
 
 ```{r}
-# Define the filter criteria
-nc = neu.NeuronCriteria(type='.*?_.*?PN.*?', regex=TRUE)
+# get neurons that match a filter criteria (using regexp like here)
+pns = neuprint_search('.*?_.*?PN.*?')
 
-# Get general info for these neurons 
-pns, roi_info = neu.fetch_neurons(nc)
+print(paste0('The number of PNs found were :',nrow(pns)))
+head(pns)
 
-print(f'{pns.shape[0]} PNs found.')
-
-pns.head()
 ```
 
 ```{r}
 # Check that the regex did not have any accidental by-catch
-pns['type'].unique()
+unique(pns$type)
 ```
 
 Find neuron types with VFB instead:
 
 ```{r}
 ALPNs = vc$get_instances("'adult antennal lobe projection neuron'", summary=TRUE)
-pd.DataFrame.from_records(ALPNs)
+ALPNs_df = do.call(rbind, ALPNs)
 ```
 
 ### Fetching synaptic partners
@@ -256,22 +253,31 @@ pd.DataFrame.from_records(ALPNs)
 Looks good! Next: What's downstream of those PNs?
 
 ```{r}
-ds = neu.fetch_simple_connections(upstream_criteria=neu.NeuronCriteria(bodyId=pns.bodyId.values))
-ds.head()
+ds = neuprint_connection_table(pns$bodyid, prepost = "POST", details = TRUE)
+colnames(ds)[colnames(ds) == 'name'] <- 'instance_post'
+colnames(ds)[colnames(ds) == 'type'] <- 'type_post'
+ds_merged = merge(ds, pns, by.x='bodyid', by.y='bodyid')[, c(1:6,15)]
+colnames(ds_merged)[colnames(ds_merged) == 'name'] <- 'type_pre'
+ds_merged = ds_merged[,c("bodyid","partner","prepost","weight","type_pre","type_post")]
+ds_merged = ds_merged[complete.cases(ds_merged), ]
+head(ds_merged)
 ```
 
 Each row is now a connections from a single up- to a single downstream neuron. The "weight" is the number of synapses between the pre- and the postsynaptic neuron. Let's simplify by grouping by type:
 
 ```{r}
-by_type = ds.groupby(['type_pre', 'type_post'], as_index=False).weight.sum()
-by_type.sort_values('weight', ascending=False, inplace=TRUE)
-by_type.reset_index(drop=TRUE, inplace=TRUE)
-by_type.head()
+library(plyr)
+groupColumns = c("type_pre","type_post")
+dataColumns = c("weight")
+by_type = ddply(ds_merged, groupColumns, function(x) colSums(x[dataColumns]))
+head(by_type)
 ```
 
 The strongest connections are between PNs and Kenyon Cells (KCs). That's little surprising since there are thousands of KCs. For the sake of the argument let's say we want to know _where_ these connections occur:
 
 ```{r}
+adj = neuprint_connection_table(bodyids=pns$bodyid,prepost = c("POST"), by.roi = T)
+
 adj, roi_info2 = neu.fetch_adjacencies(sources=neu.NeuronCriteria(bodyId=pns.bodyId.values),
                                        targets=neu.NeuronCriteria(type='KC.*?', regex=TRUE))
 roi_info2.head()  
@@ -294,24 +300,23 @@ Let's say we want to find out how to go from a PN (second order olfactory neuron
 
 ```{r}
 # First fetch the DNs
-dns, _ = neu.fetch_neurons(neu.NeuronCriteria(type='(.*DN[^1]{0,}.*|Giant Fiber)', regex=TRUE))
-dns.head()
+dns = neuprint_search('(.*DN[^1]{0,}.*|Giant Fiber)',type = "name")
+head(dns)
 ```
 
 Neuprint lets you query paths from a single source to a single target. For multi-source or -target queries, your best bet is to download the entire graph and run the queries locally using networkx or igraph.
 
 ```{r}
 # Find all paths from A PN to A DNs 
-paths = neu.fetch_shortest_paths(upstream_bodyId=pns.bodyId.values[0],
-                                 downstream_bodyId=dns.bodyId.values[0],
-                                 min_weight=10)
+#@Greg: This function simply hangs..
+paths = neuprint_get_shortest_paths(body_pre= pns$bodyid, body_post = dns$bodyid, weightT = 10)
 paths        
 ```
 
 So it looks like there are three separate 7-hop paths to go from `M_vPNml53` to `DN1a`. Let's visualize the neurons involved!
 
 ### Fetching meshes & skeletons
-You can fetch skeletons as SWCs directly via `neuprint-python`. For visualization however it's easiest to load neuron morphologies via `navis`. For that `navis` wraps `neuprint-python` and adds some convenience functions (see also the [tutorial](https://navis.readthedocs.io/en/latest/source/tutorials/neuprint.html)):
+You can fetch skeletons as SWCs directly via `neuprintr`. For visualization however it's easiest to load neuron morphologies via `nat`. For that `nat` wraps `neuprintr` and adds some convenience functions:
 
 ```{r}
 library('neuprintr')
