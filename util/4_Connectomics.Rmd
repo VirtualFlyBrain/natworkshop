@@ -8,13 +8,16 @@ Basic installation/update:
 ```{r, eval=FALSE}
 natmanager::install('natverse')
 natmanager::install(pkgs = 'jefferis/vfbconnectr')
+install.packages('forcats')
 # update Python package
 vfbconnectr::vc_install()
 ```
 
-Reinstall catmaid package since we have updated it:
+Reinstall catmaid package since we have updated it and add a new package, forcats
 ```{r}
 natmanager::install(pkgs = 'rcatmaid')
+if(!requireNamespace('forcats'))
+  install.packages('forcats')
 ```
 
 ```{r, message=FALSE}
