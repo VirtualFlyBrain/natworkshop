@@ -292,7 +292,7 @@ adj_select = adj[adj$bodyid %in% pns_kcs & adj$partner %in% pns_kcs,]
 # Group by region of interest (ROI)
 groupColumns = c("roi")
 dataColumns = c("ROIweight")
-by_roi = ddply(adj_select, groupColumns, function(x) colSums(x[dataColumns]))
+by_roi = plyr::ddply(adj_select, groupColumns, function(x) colSums(x[dataColumns]))
 by_roi = by_roi[complete.cases(by_roi), ]
 
 ```
