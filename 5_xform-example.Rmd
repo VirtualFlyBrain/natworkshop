@@ -14,7 +14,7 @@ options(nat.plotengine = 'plotly')
 
 Quick check to make sure everything is working ok. 
 ```{r}
-plot3d(Cell07PNs[1:2])
+plot(Cell07PNs[1:2])
 ```
 
 OK so the basic check looks good.
@@ -22,7 +22,7 @@ OK so the basic check looks good.
 Now let's fetch some neurons from [vfb catmaid](http://catmaid.virtualflybrain.org/):
 
 ```{r}
-vfbconn=catmaid_login(server="https://fafb.catmaid.virtualflybrain.org")
+vfbconn=vfbcatmaid("fafb")
 dl1.fafb=read.neurons.catmaid('name:DL1.*PN', conn = vfbconn)
 ```
 
@@ -61,10 +61,6 @@ plot3d(simplifyn(dl1.fafb))
 ```
 
 
-```{r message=TRUE, warning=TRUE}
-plot3d(resample(dl1.fafb, stepsize = 1000))
-```
-
 OK so now we've got some FAFB neurons, but we'd also like to get some hemibrain ones.
 
 ```{r}
@@ -86,19 +82,36 @@ dl1.fib=neuprint_read_neurons("name:DL1_adPN_R")
 dl1.fib
 ```
 
+Small hack. Switch to rgl with webgl to plot synapses
+
 ```{r}
-plot3d(dl1.fib)
+rgl::setupKnitr()
+```
+
+```{r, webgl=T}
+options(nat.plotengine = 'rgl')
+nclear3d()
+plot3d(simplifyn(dl1.fib), WithConnectors=T, col='grey')
+options(nat.plotengine = 'plotly')
 ```
 
 ```{r}
 library(nat.jrcbrains)
+# this correction factor converts raw 8nm voxels 
 dl1.fib.fafb=xform_brain(dl1.fib*(8/1000), sample='JRCFIB2018F', ref='FAFB14')
+```
+
+
+```{r}
+plot(dl1.fafb, WithNodes=F)
+plot(dl1.fib.fafb, col='grey', add=T, WithNodes=F)
+
 ```
 
 ```{r}
 nclear3d()
-plot3d(dl1.fafb)
-plot3d(dl1.fib.fafb, col='grey')
+plot3d(simplifyn(dl1.fafb))
+plot3d(simplifyn(dl1.fib.fafb), col='grey')
 ```
 
 ```{r}
@@ -109,7 +122,7 @@ dl1.all=c(dl1.fafb, dl1.fib.fafb)
 
 ```{r}
 nclear3d()
-plot3d(dl1.all, col=brain, soma=T)
+plot3d(simplifyn(dl1.all), col=brain, soma=T)
 plot3d(FAFB)
 ```
 
@@ -130,9 +143,12 @@ dl1.all.r=mirror_fafb(dl1.all, subset = dl1.all[,'side']=="L")
 
 ```{r}
 nclear3d()
-plot3d(dl1.all.r, col=side)
+plot3d(simplifyn(dl1.all.r), col=side)
 plot3d(FAFB)
 ```
+
 ```{r}
-plot3d(dl1.all.r, WithConnectors=T)
+nclear3d()
+plot3d(simplifyn(dl1.all.r), col='grey', WithConnectors=T)
+# FIXME @Sri any idea why connectors are still not working with plotly?
 ```

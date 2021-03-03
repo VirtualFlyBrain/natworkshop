@@ -5,3 +5,6 @@
 *.nb.html
 .DS_Store
 *.knit.md
+*.utf8.md
+bridging
+.Renviron
