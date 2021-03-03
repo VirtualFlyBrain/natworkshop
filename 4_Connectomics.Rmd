@@ -25,6 +25,8 @@ if(!requireNamespace('forcats'))
 library(vfbconnectr)
 library(natverse)
 library(dplyr)
+library(plyr)
+library(ggplot2)
 
 # if Running on Rstudio server (==cloud) use plotly as visualisation default
 #if(isTRUE(Sys.getenv('RSTUDIO_PROGRAM_MODE')=="server"))
@@ -269,7 +271,6 @@ head(ds_merged)
 Each row is now a connections from a single up- to a single downstream neuron. The "weight" is the number of synapses between the pre- and the postsynaptic neuron. Let's simplify by grouping by type:
 
 ```{r}
-library(plyr)
 groupColumns = c("type_pre","type_post")
 dataColumns = c("weight")
 by_type = ddply(ds_merged, groupColumns, function(x) colSums(x[dataColumns]))
@@ -279,23 +280,30 @@ head(by_type)
 The strongest connections are between PNs and Kenyon Cells (KCs). That's little surprising since there are thousands of KCs. For the sake of the argument let's say we want to know _where_ these connections occur:
 
 ```{r}
-adj = neuprint_connection_table(bodyids=pns$bodyid, prepost = c("POST"), by.roi = T)
+kcs = neuprint_search('KC.*?')
+pns_kcs = c(pns$bodyid, kcs$bodyid)
+adj = neuprint_connection_table(bodyids=pns_kcs, by.roi = T)
 
-# adj, roi_info2 = neu.fetch_adjacencies(sources=neu.NeuronCriteria(bodyId=pns.bodyId.values),
-#                                        targets=neu.NeuronCriteria(type='KC.*?', regex=TRUE))
-# roi_info2.head()  
+adj_select = adj[adj$bodyid %in% pns_kcs & adj$partner %in% pns_kcs,]
+
 ```
 
 ```{r}
 # Group by region of interest (ROI)
-# by_roi = roi_info2.groupby('roi').weight.sum()
-# by_roi.head()
+groupColumns = c("roi")
+dataColumns = c("ROIweight")
+by_roi = ddply(adj_select, groupColumns, function(x) colSums(x[dataColumns]))
+by_roi = by_roi[complete.cases(by_roi), ]
+
 ```
 
 ```{r}
-# ax = by_roi.plot.bar()
-# ax.set_xlabel('')
-# ax.set_ylabel('PN to KC synapses')
+g <- ggplot(by_roi, aes(roi))
+# Number of cars in each class:
+g <- g + geom_bar(aes(weight = ROIweight))
+
+g
+
 ```
 
 #### Querying paths
