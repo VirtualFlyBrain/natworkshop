@@ -1,0 +1,138 @@
+---
+title: "xform example"
+output: html_notebook
+---
+
+This notebook is going to give an example of transforming neurons between different brain spaces. In particular we will use FAFB and hemibrain data.
+
+```{r, message=FALSE}
+library(natverse)
+# for the cloud we need to use plotly for 3D plots 
+# see http://natverse.org/nat/articles/plotly.html for details
+options(nat.plotengine = 'plotly')
+```
+
+Quick check to make sure everything is working ok. 
+```{r}
+plot3d(Cell07PNs[1:2])
+```
+
+OK so the basic check looks good.
+
+Now let's fetch some neurons from [vfb catmaid](http://catmaid.virtualflybrain.org/):
+
+```{r}
+vfbconn=catmaid_login(server="https://fafb.catmaid.virtualflybrain.org")
+dl1.fafb=read.neurons.catmaid('name:DL1.*PN', conn = vfbconn)
+```
+
+We can make a 2d plot like so:
+```{r}
+# With Nodes suppresses plotting all the nodes. 
+plot(dl1.fafb[[1]], WithNodes = F)
+```
+
+Although this is not a problem for the rgl package used for visualisation on the 
+desktop, it may be a good idea to simplify the neurons for display in the browser
+
+```{r}
+simplifyn <- function(x, stepsize=1, twigsize=2) {
+  # crude way to guess if units are in nm or microns
+  maxdim=max(diff(boundingbox(dl1.fafb)))
+  units=if(maxdim>2000) "nm" else "um"
+  stepsize=ifelse(units=="nm", stepsize*1000, stepsize)
+  twigsize=ifelse(units=="nm", twigsize*1000, twigsize)
+  x1=prune_twigs(x, twig_length=twigsize)
+  x2=resample(x, stepsize)
+  x2
+}
+```
+
+
+```{r}
+nvertices(dl1.fafb)
+nvertices(simplifyn(dl1.fafb))
+summary(dl1.fafb)
+summary(simplifyn(dl1.fafb))
+```
+OK, so let's get to work
+```{r}
+plot3d(simplifyn(dl1.fafb))
+```
+
+
+```{r message=TRUE, warning=TRUE}
+plot3d(resample(dl1.fafb, stepsize = 1000))
+```
+
+OK so now we've got some FAFB neurons, but we'd also like to get some hemibrain ones.
+
+```{r}
+library(neuprintr)
+neuprint_login()
+```
+
+```{r}
+neuprint_get_meta('DL1_adPN')
+```
+
+The LHS neurons will be really be truncated, so let's stick with RHS.
+```{r}
+# note how we specify neurons with a certain name
+dl1.fib=neuprint_read_neurons("name:DL1_adPN_R")
+```
+
+```{r}
+dl1.fib
+```
+
+```{r}
+plot3d(dl1.fib)
+```
+
+```{r}
+library(nat.jrcbrains)
+dl1.fib.fafb=xform_brain(dl1.fib*(8/1000), sample='JRCFIB2018F', ref='FAFB14')
+```
+
+```{r}
+nclear3d()
+plot3d(dl1.fafb)
+plot3d(dl1.fib.fafb, col='grey')
+```
+
+```{r}
+dl1.fafb[,'brain']='FAFB'
+dl1.fib.fafb[,'brain']='hemibrain'
+dl1.all=c(dl1.fafb, dl1.fib.fafb)
+```
+
+```{r}
+nclear3d()
+plot3d(dl1.all, col=brain, soma=T)
+plot3d(FAFB)
+```
+
+We can also move neurons from the left to right of FAFB. It's convenient to 
+add a column to keep track of which neurons are on the left and right.
+
+```{r}
+# find mean X axis position
+meanx=sapply(dl1.all, function(n) mean(xyzmatrix(n)[,1]))
+meanx
+dl1.all[,'side']=ifelse(meanx>500e3, "L", "R")
+```
+
+We can use subset to mirror only the LHS neurons
+```{r}
+dl1.all.r=mirror_fafb(dl1.all, subset = dl1.all[,'side']=="L")
+```
+
+```{r}
+nclear3d()
+plot3d(dl1.all.r, col=side)
+plot3d(FAFB)
+```
+```{r}
+plot3d(dl1.all.r, WithConnectors=T)
+```
