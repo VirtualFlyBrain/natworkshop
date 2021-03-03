@@ -314,6 +314,38 @@ So it looks like there are three separate 7-hop paths to go from `M_vPNml53` to 
 You can fetch skeletons as SWCs directly via `neuprint-python`. For visualization however it's easiest to load neuron morphologies via `navis`. For that `navis` wraps `neuprint-python` and adds some convenience functions (see also the [tutorial](https://navis.readthedocs.io/en/latest/source/tutorials/neuprint.html)):
 
 ```{r}
+library('neuprintr')
+neuprint_login()
+```
+
+
+```{r}
+neuprint_datasets()
+```
+
+```{r}
+nl = neuprint_read_neurons(bodyids = c(818983130, 1796818119))
+```
+
+```{r}
+al_r.mesh = neuprint_ROI_mesh(roi = "AL(R)")
+lh_r.mesh = neuprint_ROI_mesh(roi = "LH(R)")
+ca_r.mesh = neuprint_ROI_mesh(roi = "CA(R)")
+```
+
+```{r}
+options(nat.plotengine = 'plotly')
+nclear3d()
+plot3d(nl,plotengine = 'plotly')
+wire3d(al_r.mesh, col = 'red', alpha = 0.1)
+wire3d(lh_r.mesh,col = 'magenta', alpha = 0.1)
+wire3d(ca_r.mesh,col = 'blue', alpha = 0.1)
+```
+
+
+
+
+```{python}
 # Import the wrapped neuprint-python 
 # -> this exposes ALL base functions plus a couple navis-specific extras
 import navis
@@ -326,14 +358,14 @@ nl = neu.fetch_skeletons(paths.loc[(paths.path == 0), 'bodyId'])
 nl
 ```
 
-```{r}
+```{python}
 # Let's also get some ROI meshes
 al = neu.fetch_roi('AL(R)')
 lh = neu.fetch_roi('LH(R)')
 ca = neu.fetch_roi('CA(R)')
 ```
 
-```{r}
+```{python}
 # Plot
 navis.plot3d([nl, lh, al, ca], width=1100)
 ```
