@@ -71,7 +71,7 @@ plot(n, WithNodes = F, col='gold')
 ```{r}
 # in order to 
 nclear3d()
-plot3d(n, plotengine='plotly')
+plot3d(n, plotengine='plotly', soma=T)
 ```
 
 **Navigation:**
