@@ -319,19 +319,14 @@ Neuprint lets you query paths from a single source to a single target. For multi
 
 ```{r}
 # Find all paths from A PN to A DNs 
-#@Greg: This function simply hangs..
-paths = neuprint_get_shortest_paths(body_pre= pns$bodyid, body_post = dns$bodyid)
+#@Greg: This function simply hangs,so I just used one bodyid..
+paths = neuprint_get_shortest_paths(body_pre= pns$bodyid, body_post = dns$bodyid[1])
 ```
 
 So it looks like there are three separate 7-hop paths to go from `M_vPNml53` to `DN1a`. Let's visualize the neurons involved!
 
 ### Fetching meshes & skeletons
 You can fetch skeletons as SWCs directly via `neuprintr`. For visualization however it's easiest to load neuron morphologies via `nat`. For that `nat` wraps `neuprintr` and adds some convenience functions:
-
-```{r}
-library('neuprintr')
-neuprint_login()
-```
 
 
 ```{r}
