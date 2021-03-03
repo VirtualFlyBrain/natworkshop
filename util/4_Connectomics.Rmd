@@ -12,6 +12,10 @@ natmanager::install(pkgs = 'jefferis/vfbconnectr')
 vfbconnectr::vc_install()
 ```
 
+Reinstall catmaid package since we have updated it:
+```{r}
+natmanager::install(pkgs = 'rcatmaid')
+```
 
 ```{r, message=FALSE}
 # load packages
@@ -68,55 +72,133 @@ DA1_tab = vc$get_instances("'adult antennal lobe projection neuron DA1'", summar
 DA1_tab
 ```
 
+Where do these data come from?
+
 ```{r}
-# Map neurons to CATMAID Skeleton IDs (skids)
-da1_id_list = vc$neo_query_wrapper$vfb_id_2_xrefs(DA1_tab[,'id'], db='catmaid_fafb', reverse_return=TRUE)
-# the names of each element in the list are the actual ids
+table(DA1_tab$data_source)
+```
+
+So a mix of fafb and hemibrain (and in fact it's not an accident that there are
+approximately 2x as many FAFB as hemibrain). However there are 6 without a data
+source. How about them?
+
+```{r}
+DA1_tab %>%
+  filter(data_source=="") %>%
+  select(label, id, dataset, templates)
+```
+Ok so those are from light level datasets, although there is something funny to me about the labels, since they are all identical and the fact that some do not
+have templates.
+
+Now let's map neurons to CATMAID Skeleton IDs (skids)
+```{r}
+# note that db='catmaid_fafb' filters the returned values
+# while reverse_return 
+da1_id_list = vc$neo_query_wrapper$vfb_id_2_xrefs(
+  DA1_tab[,'id'], 
+  db='catmaid_fafb', 
+  reverse_return=TRUE)
+# the names of each element in the returned list are the actual ids
 da1_skids = names(da1_id_list)
 da1_skids
 ```
 
-Generate a connectivity table for neurons downstream of DA1 neurons
-
+We can now fetch the neurons like this:
 ```{r}
 da1 = read.neurons.catmaid(da1_skids)
-da1_ds = catmaid_get_connector_table(da1_skids_int, direction = )
-
-# Result is a pandas DataFrame
-da1_ds.head()
 ```
+
+Let's generate a connectivity table for neurons downstream of DA1 neurons
+
+```{r}
+da1_ds = catmaid_get_connector_table(da1_skids, direction = 'outgoing')
+da1_ds
+```
+That's a lot of rows. Let's do some quick summaries:
+
+```{r}
+da1_ds %>%
+  count(skid)
+```
+```{r}
+library(ggplot2)
+da1_ds %>%
+  count(skid) %>%
+  # note that we turn skid into a factor to make it categorical
+  mutate(skid=factor(skid)) %>%
+  # and sort the levels by frequency
+  mutate(skid=forcats::fct_reorder(skid, desc(n))) %>% 
+  # xlim insists that the X axis starts at 0
+  qplot(n, skid, data=.) 
+```
+
+I wonder why there are such big differences in synapse count. I have a hunch
+that they might not have been uniformly reconstructed. Let's add in side
+information by using the metadata we fetched earlier. The *label* field includes
+the side of the brain `Uniglomerular mALT DA1 lPN#L2 (FAFB:2319457)`.
+
+```{r}
+da1_ds %>%
+  count(skid) %>%
+  merge(y=DA1_tab, by.y="accession", by.x='skid') %>% 
+  mutate(side=stringr::str_match(label, '#([LR])')[,2]) %>%
+  # note that we turn skid into a factor to make it categorical
+  mutate(skid=factor(skid)) %>%
+  # and sort the levels by frequency
+  mutate(skid=forcats::fct_reorder(skid, desc(n))) ->
+  da1_ds.summary
+
+
+  # xlim insists that the X axis starts at 0
+  qplot(n, skid, xlim=c(0, NA), col=side, data=da1_ds.summary) 
+```
+
+So a cautionary tale!
+
+We can also visualise the individual cell types, like so:
+
+```{r}
+qplot(n, skid, xlim=c(0, NA), label=side, col=parents_label, data=da1_ds.summary, geom='text') 
+```
+
+By the way you can mix python and R analysis
+
+```{python}
+import pymaid
+rm=pymaid.connect_catmaid(server="https://fafb.catmaid.virtualflybrain.org/", api_token=None, max_threads=10)
+bates = pymaid.find_neurons(annotations='Paper: Bates and Schlegel et al 2020')
+adj = pymaid.adjacency_matrix(bates)
+
+import matplotlib.pyplot as plt
+import seaborn as sns 
+ax = sns.clustermap(adj, vmax=10, cmap='Greys')
+plt.show()
+```
+
+
 
 ```{r}
 # Get an adjacency matrix between all Bates, Schlegel et al. neurons
-bates = pymaid.find_neurons(annotations='Paper: Bates and Schlegel et al 2020')
-adj = pymaid.adjacency_matrix(bates)
-adj.head()
+adj = catmaid_adjacency_matrix('Paper: Bates and Schlegel et al 2020')
+adj[1:5,1:5]
 ```
 
 ```{r}
-import seaborn as sns 
-
-ax = sns.clustermap(adj, vmax=10, cmap='Greys')
+heatmap(adj, col=grey.colors(20, start = 1, end=.3))
 ```
 
-
+Let's look at axo-axonic connections between two different types of DA1 PNs
 
 ```{r}
-# Axo-axonic connections between two different types of DA1 PNs
-cn = pymaid.get_connectors_between(2863104, 1811442)
-cn.head()
+cn = catmaid_get_connectors_between(2863104, 1811442)
+cn
 ```
 
 ```{r}
-import numpy as np 
-
-points = np.vstack(cn.connector_loc)
-
-navis.plot3d([da1.idx[[1811442, 57353
-]],  # plot the two neurons
-              points],  # plot the points of synaptic contacts as scatter 
-              scatter_kws=dict(name="synaptic contacts")
-              )
+nclear3d()
+plot3d(da1[as.character(c(1811442, 57353))])
+# FIXME Sri I forget how to add points to a plotly plot
+points3d(cn[c("connector_x", "connector_y", "connector_z")])
 ```
 
 #### neuprint connectivity queries
