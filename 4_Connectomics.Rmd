@@ -25,7 +25,7 @@ if(!requireNamespace('forcats'))
 library(vfbconnectr)
 library(natverse)
 library(dplyr)
-library(plyr)
+#library(plyr)
 library(ggplot2)
 
 # if Running on Rstudio server (==cloud) use plotly as visualisation default
@@ -273,7 +273,7 @@ Each row is now a connections from a single up- to a single downstream neuron. T
 ```{r}
 groupColumns = c("type_pre","type_post")
 dataColumns = c("weight")
-by_type = ddply(ds_merged, groupColumns, function(x) colSums(x[dataColumns]))
+by_type = plyr::ddply(ds_merged, groupColumns, function(x) colSums(x[dataColumns]))
 head(by_type)
 ```
 
