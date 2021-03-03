@@ -201,9 +201,7 @@ cn
 
 ```{r}
 nclear3d()
-plot3d(da1[as.character(c(1811442, 57353))])
-# FIXME Sri I forget how to add points to a plotly plot
-points3d(cn[c("connector_x", "connector_y", "connector_z")])
+plot3d(da1[[1]], WithConnectors=TRUE)
 ```
 
 #### neuprint connectivity queries
@@ -334,7 +332,7 @@ neuprint_datasets()
 ```
 
 ```{r}
-nl = neuprint_read_neurons(bodyids = c(818983130, 1796818119))
+nl = neuprint_read_neurons(bodyids = paths$from[1:2])
 ```
 
 ```{r}
