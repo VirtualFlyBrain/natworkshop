@@ -276,7 +276,7 @@ head(by_type)
 The strongest connections are between PNs and Kenyon Cells (KCs). That's little surprising since there are thousands of KCs. For the sake of the argument let's say we want to know _where_ these connections occur:
 
 ```{r}
-adj = neuprint_connection_table(bodyids=pns$bodyid,prepost = c("POST"), by.roi = T)
+adj = neuprint_connection_table(bodyids=c(pns$bodyid, ,prepost = c("POST"), by.roi = T)
 
 adj, roi_info2 = neu.fetch_adjacencies(sources=neu.NeuronCriteria(bodyId=pns.bodyId.values),
                                        targets=neu.NeuronCriteria(type='KC.*?', regex=TRUE))
@@ -300,7 +300,7 @@ Let's say we want to find out how to go from a PN (second order olfactory neuron
 
 ```{r}
 # First fetch the DNs
-dns = neuprint_search('(.*DN[^1]{0,}.*|Giant Fiber)',type = "name")
+dns = neuprint_search('.*DN[^1]{0,}.*|Giant Fiber',type = "name")
 head(dns)
 ```
 
