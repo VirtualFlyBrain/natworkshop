@@ -276,23 +276,23 @@ head(by_type)
 The strongest connections are between PNs and Kenyon Cells (KCs). That's little surprising since there are thousands of KCs. For the sake of the argument let's say we want to know _where_ these connections occur:
 
 ```{r}
-adj = neuprint_connection_table(bodyids=c(pns$bodyid, ,prepost = c("POST"), by.roi = T)
+adj = neuprint_connection_table(bodyids=pns$bodyid, prepost = c("POST"), by.roi = T)
 
-adj, roi_info2 = neu.fetch_adjacencies(sources=neu.NeuronCriteria(bodyId=pns.bodyId.values),
-                                       targets=neu.NeuronCriteria(type='KC.*?', regex=TRUE))
-roi_info2.head()  
+# adj, roi_info2 = neu.fetch_adjacencies(sources=neu.NeuronCriteria(bodyId=pns.bodyId.values),
+#                                        targets=neu.NeuronCriteria(type='KC.*?', regex=TRUE))
+# roi_info2.head()  
 ```
 
 ```{r}
 # Group by region of interest (ROI)
-by_roi = roi_info2.groupby('roi').weight.sum()
-by_roi.head()
+# by_roi = roi_info2.groupby('roi').weight.sum()
+# by_roi.head()
 ```
 
 ```{r}
-ax = by_roi.plot.bar()
-ax.set_xlabel('')
-ax.set_ylabel('PN to KC synapses')
+# ax = by_roi.plot.bar()
+# ax.set_xlabel('')
+# ax.set_ylabel('PN to KC synapses')
 ```
 
 #### Querying paths
@@ -309,8 +309,7 @@ Neuprint lets you query paths from a single source to a single target. For multi
 ```{r}
 # Find all paths from A PN to A DNs 
 #@Greg: This function simply hangs..
-paths = neuprint_get_shortest_paths(body_pre= pns$bodyid, body_post = dns$bodyid, weightT = 10)
-paths        
+paths = neuprint_get_shortest_paths(body_pre= pns$bodyid, body_post = dns$bodyid)
 ```
 
 So it looks like there are three separate 7-hop paths to go from `M_vPNml53` to `DN1a`. Let's visualize the neurons involved!
@@ -345,32 +344,4 @@ plot3d(nl,plotengine = 'plotly')
 wire3d(al_r.mesh, col = 'red', alpha = 0.1)
 wire3d(lh_r.mesh,col = 'magenta', alpha = 0.1)
 wire3d(ca_r.mesh,col = 'blue', alpha = 0.1)
-```
-
-
-
-
-```{python}
-# Import the wrapped neuprint-python 
-# -> this exposes ALL base functions plus a couple navis-specific extras
-import navis
-import navis.interfaces.neuprint as neu 
-
-client = neu.Client('https://neuprint.janelia.org', dataset='hemibrain:v1.1')
-
-# Fetch neurons in the first path
-nl = neu.fetch_skeletons(paths.loc[(paths.path == 0), 'bodyId'])
-nl
-```
-
-```{python}
-# Let's also get some ROI meshes
-al = neu.fetch_roi('AL(R)')
-lh = neu.fetch_roi('LH(R)')
-ca = neu.fetch_roi('CA(R)')
-```
-
-```{python}
-# Plot
-navis.plot3d([nl, lh, al, ca], width=1100)
 ```
